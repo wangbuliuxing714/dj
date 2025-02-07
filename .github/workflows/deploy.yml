@@ -22,19 +22,20 @@ jobs:
         with:
           flutter-version: '3.16.9'
           channel: 'stable'
+          cache: true
       
       - name: Enable web
         run: flutter config --enable-web
         
       - name: Get dependencies
         run: |
-          flutter pub upgrade
+          flutter clean
           flutter pub get
+          flutter pub upgrade
         
       - name: Build
         run: |
-          flutter clean
-          flutter build web --release --base-href "/dj/" --web-renderer html
+          flutter build web --release --base-href "/dj/" --web-renderer html --pwa-strategy offline-first
           touch build/web/.nojekyll
           cp build/web/index.html build/web/404.html
         
