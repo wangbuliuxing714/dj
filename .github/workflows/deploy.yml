@@ -2,18 +2,21 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]  # 同时支持 main 和 master 分支
   workflow_dispatch:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -31,15 +34,29 @@ jobs:
         run: |
           flutter clean
           flutter pub get
-          flutter pub upgrade
+          
+      - name: Verify dependencies
+        run: flutter pub outdated
         
-      - name: Build
+      - name: Build web
         run: |
-          flutter build web --release --base-href "/dj/" --web-renderer html --pwa-strategy offline-first
+          flutter build web \
+            --release \
+            --base-href "/${{ github.event.repository.name }}/" \
+            --web-renderer html \
+            --pwa-strategy offline-first
+            
+      - name: Configure Pages
+        run: |
           touch build/web/.nojekyll
           cp build/web/index.html build/web/404.html
         
-      - name: Deploy
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+          
+      - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
