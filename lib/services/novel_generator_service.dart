@@ -176,7 +176,7 @@ class NovelGeneratorService extends GetxService {
         '${e.key}：${e.value.join("、")}').join('\n');
     }
 
-    // 替换变量
+    // 替换模板变量
     template = template
       .replaceAll('{title}', title)
       .replaceAll('{genre}', genres.join('+'))
@@ -184,8 +184,12 @@ class NovelGeneratorService extends GetxService {
       .replaceAll('{target_readers}', targetReaders)
       .replaceAll('{total_chapters}', totalChapters.toString());
 
-    final combinedGenrePrompt = '''
-【选定的类型组合】
+    final systemPrompt = '''${SystemPrompts.getRolePrompt('outlineWriter')}
+
+【模板要求】
+$template
+
+【类型参考】
 主类型：${genres[0]}
 辅助类型：${genres.length > 1 ? genres.sublist(1).join('、') : '无'}
 
@@ -197,39 +201,15 @@ ${formatElements(genreElements)}
 
 【关键词库】
 ${genreKeywords.join('、')}
-''';
 
-    final systemPrompt = '''【核心要求】
-你是一位资深的短剧编剧，擅长创作悬疑复仇类短剧。请遵循以下要求：
+【用户要求】
+$theme
 
-1. 剧本格式（最高优先级）：
-   - 每集2-3个场景
-   - 场景格式：序号 地点 时间 内/外景
-   - 动作以"△"开头，简短明确
-   - 对白格式：角色名（情绪/动作）：对话内容
-   - 特殊标记：【闪回】【镜头特写】【字幕】【付费卡点】
-
-2. 剧情设计：
-   - 每集必须有悬念和反转
-   - 反派台词要强势威胁
-   - 正派台词要隐忍有深意
-   - 重点使用镜头语言
-   - 每集结尾设置付费点
-
-3. 场景要求：
-   - 场景之间要有紧密联系
-   - 每个场景要有明确冲突
-   - 善用特写和慢动作
-   - 注重视觉表现力
-   - 控制场景节奏感
-
-类型参考：
-${combinedGenrePrompt}
-
-用户创作要求：
-${theme}
-
-请记住：你不能更改用户指定的任何角色名称和基本设定。''';
+请记住：
+1. 严格按照模板格式生成大纲
+2. 不能更改用户指定的任何角色名称和基本设定
+3. 每集必须设置悬念和付费点
+4. 保持剧情的连贯性和完整性''';
 
     final userPrompt = '''请为这部融合${genres.join('和')}多种类型特点的短剧创作第$startChapter集到第$endChapter集的详细大纲。
 
@@ -237,29 +217,12 @@ ${theme}
 ${existingOutline.isEmpty ? '这是第一部分大纲，请从第一集开始创作。' : '已有大纲内容：\n$existingOutline\n请继续创作后续内容。'}
 
 【创作要求】
-1. 必须与已有大纲保持连贯性和一致性
+1. 必须严格按照上述模板格式生成大纲
 2. 每集都要有明确的悬念和反转
 3. 注意与前文的呼应和伏笔
 4. 为后续剧集预留发展空间
 5. 巧妙融合${genres.join('和')}的类型特点
 6. 创造独特的混合风格体验
-
-【格式规范】（最高优先级，必须严格遵守）
-每集必须包含以下六个部分，并使用指定的标题格式：
-
-第N集：
-1. 剧情概要：（简要概述本集主要内容）
-2. 场景列表：（2-3个场景，包含地点和时间）
-3. 关键对白：（重要人物的关键台词）
-4. 重要道具：（本集出现的关键道具）
-5. 悬念设计：（本集设置的悬念点）
-6. 付费点：（本集的付费点设置）
-
-请注意：
-1. 每个部分必须使用以上标准格式的标题
-2. 内容要详细具体，不要空泛
-3. 每集必须完整包含以上六个部分
-4. 严格遵守格式要求，保持一致性
 
 请开始创作第$startChapter集到第$endChapter集的大纲。''';
 
@@ -369,7 +332,11 @@ ${existingOutline.isEmpty ? '这是第一部分大纲，请从第一集开始创
     bool hasContent = false;
     
     for (final line in lines) {
-      final trimmedLine = line.trim();
+      // 过滤掉特殊符号
+      var trimmedLine = line.trim()
+          .replaceAll('#', '')
+          .replaceAll('*', '');
+      
       if (trimmedLine.isEmpty) continue;
       
       // 检查是否是段落标记
@@ -405,7 +372,7 @@ ${existingOutline.isEmpty ? '这是第一部分大纲，请从第一集开始创
         buffer.writeln('\n付费点：');
         hasContent = true;
       } else if (currentSection.isNotEmpty) {
-        // 为内容添加缩进
+        // 为内容添加缩进，同时过滤特殊符号
         buffer.writeln('  $trimmedLine');
         hasContent = true;
       } else {
@@ -614,7 +581,9 @@ ${_designChapterFocus(number: number, totalChapters: totalChapters, outline: out
       maxTokens: maxTokens,
       temperature: temperature,
     )) {
-      buffer.write(chunk);
+      // 过滤掉特殊符号
+      final filteredChunk = chunk.replaceAll('#', '').replaceAll('*', '');
+      buffer.write(filteredChunk);
       onProgress?.call('正在生成第$number章...\n\n${buffer.toString()}');
     }
 

@@ -10,6 +10,7 @@ import 'package:novel_app/services/export_service.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:novel_app/models/character_card.dart';
 
 class NovelController extends GetxController {
   final _novelGenerator = Get.find<NovelGeneratorService>();
@@ -18,13 +19,17 @@ class NovelController extends GetxController {
   final novels = <Novel>[].obs;
   
   final title = ''.obs;
-  final mainCharacter = ''.obs;
-  final femaleCharacter = ''.obs;
   final background = ''.obs;
   final otherRequirements = ''.obs;
   final style = '悬疑烧脑'.obs;
-  final totalChapters = 12.obs;  // 默认12集
+  final totalChapters = 12.obs;
   final selectedGenres = <String>[].obs;
+  
+  // 角色相关
+  final Rx<CharacterCard?> selectedMainCharacter = Rx<CharacterCard?>(null);
+  final Rx<CharacterCard?> selectedFemaleCharacter = Rx<CharacterCard?>(null);
+  final RxList<CharacterCard> selectedSupportingCharacters = <CharacterCard>[].obs;
+  final RxList<CharacterCard> selectedVillains = <CharacterCard>[].obs;
   
   final isGenerating = false.obs;
   final generationStatus = ''.obs;
@@ -68,8 +73,6 @@ class NovelController extends GetxController {
   }
 
   void updateTitle(String value) => title.value = value;
-  void updateMainCharacter(String value) => mainCharacter.value = value;
-  void updateFemaleCharacter(String value) => femaleCharacter.value = value;
   void updateBackground(String value) => background.value = value;
   void updateOtherRequirements(String value) => otherRequirements.value = value;
   void updateStyle(String value) => style.value = value;
@@ -87,6 +90,34 @@ class NovelController extends GetxController {
     _cacheService.clearAllCache();
   }
 
+  void setMainCharacter(CharacterCard character) {
+    selectedMainCharacter.value = character;
+  }
+
+  void setFemaleCharacter(CharacterCard character) {
+    selectedFemaleCharacter.value = character;
+  }
+
+  void addSupportingCharacter(CharacterCard character) {
+    if (!selectedSupportingCharacters.contains(character)) {
+      selectedSupportingCharacters.add(character);
+    }
+  }
+
+  void removeSupportingCharacter(CharacterCard character) {
+    selectedSupportingCharacters.remove(character);
+  }
+
+  void addVillain(CharacterCard character) {
+    if (!selectedVillains.contains(character)) {
+      selectedVillains.add(character);
+    }
+  }
+
+  void removeVillain(CharacterCard character) {
+    selectedVillains.remove(character);
+  }
+
   Future<void> generateNovel({bool continueGeneration = false}) async {
     if (title.isEmpty) {
       Get.snackbar('错误', '请输入剧名');
@@ -98,15 +129,17 @@ class NovelController extends GetxController {
       return;
     }
 
-    if (mainCharacter.isEmpty) {
-      Get.snackbar('错误', '请输入主角设定');
+    if (selectedMainCharacter.value == null) {
+      Get.snackbar('错误', '请选择主角');
       return;
     }
 
     // 构建完整的创作要求
     final theme = '''【角色设定】
-主角设定：${mainCharacter.value}
-反派设定：${femaleCharacter.value}
+主角设定：${_formatCharacterInfo(selectedMainCharacter.value!)}
+女主角设定：${selectedFemaleCharacter.value != null ? _formatCharacterInfo(selectedFemaleCharacter.value!) : '无'}
+配角设定：${selectedSupportingCharacters.map((c) => _formatCharacterInfo(c)).join('\n')}
+反派设定：${selectedVillains.map((c) => _formatCharacterInfo(c)).join('\n')}
 背景设置：${background.value}
 
 【剧情要求】
@@ -221,8 +254,8 @@ ${otherRequirements.value}
         previousChapters: _generatedChapters.toList(),
         totalChapters: totalChapters.value,
         genres: selectedGenres,
-        theme: '''主角设定：${mainCharacter.value}
-女主角设定：${femaleCharacter.value}
+        theme: '''主角设定：${_formatCharacterInfo(selectedMainCharacter.value!)}
+女主角设定：${selectedFemaleCharacter.value != null ? _formatCharacterInfo(selectedFemaleCharacter.value!) : '无'}
 故事背景：${background.value}
 其他要求：${otherRequirements.value}''',
         onProgress: (status) {
@@ -252,5 +285,60 @@ ${otherRequirements.value}
   // 停止生成
   void stopGeneration() {
     isGenerating.value = false;
+  }
+
+  String _formatCharacterInfo(CharacterCard character) {
+    final info = StringBuffer();
+    
+    // 基本信息
+    info.write('${character.name}');
+    if (character.gender != null) info.write('，${character.gender}');
+    if (character.age != null) info.write('，${character.age}岁');
+    if (character.species != null) info.write('，${character.species}');
+    
+    // 外貌特征
+    final appearance = <String>[];
+    if (character.bodyType != null) appearance.add(character.bodyType!);
+    if (character.facialFeatures != null) appearance.add(character.facialFeatures!);
+    if (character.clothingStyle != null) appearance.add(character.clothingStyle!);
+    if (character.accessories != null) appearance.add(character.accessories!);
+    if (appearance.isNotEmpty) {
+      info.write('\n外貌特征：${appearance.join('；')}');
+    }
+    
+    // 性格特征
+    if (character.personality != null) info.write('\n性格：${character.personality}');
+    if (character.personalityComplexity != null) info.write('\n性格复杂性：${character.personalityComplexity}');
+    if (character.personalityFormation != null) info.write('\n性格形成原因：${character.personalityFormation}');
+    
+    // 背景故事
+    if (character.background != null) info.write('\n背景：${character.background}');
+    if (character.lifeExperience != null) info.write('\n重要经历：${character.lifeExperience}');
+    if (character.pastEvents != null) info.write('\n关键过往：${character.pastEvents}');
+    
+    // 目标和动机
+    if (character.motivation != null) info.write('\n动机：${character.motivation}');
+    if (character.shortTermGoals != null) info.write('\n短期目标：${character.shortTermGoals}');
+    if (character.longTermGoals != null) info.write('\n长期目标：${character.longTermGoals}');
+    
+    // 能力和技能
+    final skills = <String>[];
+    if (character.specialAbilities != null) skills.add('特殊能力：${character.specialAbilities}');
+    if (character.normalSkills != null) skills.add('普通技能：${character.normalSkills}');
+    if (skills.isNotEmpty) {
+      info.write('\n能力：${skills.join('；')}');
+    }
+    
+    // 人际关系
+    final relationships = <String>[];
+    if (character.family != null) relationships.add('家人：${character.family}');
+    if (character.friends != null) relationships.add('朋友：${character.friends}');
+    if (character.enemies != null) relationships.add('敌人：${character.enemies}');
+    if (character.lovers != null) relationships.add('情感关系：${character.lovers}');
+    if (relationships.isNotEmpty) {
+      info.write('\n人际关系：${relationships.join('；')}');
+    }
+    
+    return info.toString();
   }
 }

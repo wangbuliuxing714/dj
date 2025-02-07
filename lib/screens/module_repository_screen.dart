@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:novel_app/screens/genre_manager_screen.dart';
 import 'package:novel_app/screens/style_manager_screen.dart';
 import 'package:novel_app/screens/outline_prompt_screen.dart';
+import 'package:novel_app/screens/character_card_list_screen.dart';
 
 class ModuleRepositoryScreen extends StatelessWidget {
   const ModuleRepositoryScreen({super.key});
@@ -39,6 +40,13 @@ class ModuleRepositoryScreen extends StatelessWidget {
             title: '大纲提示词',
             description: '管理大纲生成模板',
             onTap: () => Get.to(OutlinePromptScreen()),
+          ),
+          _buildModuleCard(
+            context,
+            icon: Icons.person,
+            title: '角色卡片',
+            description: '管理小说角色信息',
+            onTap: () => Get.to(CharacterCardListScreen()),
           ),
         ],
       ),

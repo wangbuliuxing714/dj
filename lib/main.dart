@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:novel_app/controllers/api_config_controller.dart';
 import 'package:novel_app/controllers/novel_controller.dart';
+import 'package:novel_app/controllers/character_card_controller.dart';
 import 'package:novel_app/screens/home/home_screen.dart';
 import 'package:novel_app/screens/storage/storage_screen.dart';
 import 'package:novel_app/screens/chapter_detail/chapter_detail_screen.dart';
@@ -49,6 +50,9 @@ void main() async {
   final outlinePromptController = OutlinePromptController();
   await outlinePromptController.init();
   Get.put(outlinePromptController);
+  
+  // 初始化角色卡片控制器
+  Get.put(CharacterCardController());
   
   // 然后初始化其他依赖服务
   Get.put(NovelGeneratorService(aiService, apiConfig, cacheService));

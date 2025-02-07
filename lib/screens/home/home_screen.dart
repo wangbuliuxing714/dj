@@ -12,6 +12,9 @@ import 'package:novel_app/screens/genre_manager_screen.dart';
 import 'package:novel_app/controllers/genre_controller.dart';
 import 'package:novel_app/screens/module_repository_screen.dart';
 import 'package:novel_app/controllers/style_controller.dart';
+import 'package:novel_app/controllers/character_card_controller.dart';
+import 'package:novel_app/models/character_card.dart';
+import 'package:novel_app/screens/character_card_edit_screen.dart';
 
 class HomeScreen extends GetView<NovelController> {
   const HomeScreen({super.key});
@@ -19,6 +22,7 @@ class HomeScreen extends GetView<NovelController> {
   @override
   Widget build(BuildContext context) {
     final themeController = Get.find<ThemeController>();
+    final characterController = Get.find<CharacterCardController>();
     
     return Scaffold(
       appBar: AppBar(
@@ -205,6 +209,8 @@ class HomeScreen extends GetView<NovelController> {
   }
 
   Widget _buildGeneratorForm() {
+    final characterController = Get.find<CharacterCardController>();
+    
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -221,6 +227,8 @@ class HomeScreen extends GetView<NovelController> {
             const SizedBox(height: 16),
             _buildGenreSelector(),
             const SizedBox(height: 16),
+            _buildCharacterSection(controller, characterController),
+            const SizedBox(height: 16),
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -235,24 +243,6 @@ class HomeScreen extends GetView<NovelController> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    TextField(
-                      decoration: const InputDecoration(
-                        labelText: '主角设定',
-                        hintText: '例如：张伟，大学生，性格开朗',
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: controller.updateMainCharacter,
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      decoration: const InputDecoration(
-                        labelText: '女主角设定',
-                        hintText: '例如：李玲，校花，性格温柔',
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: controller.updateFemaleCharacter,
-                    ),
-                    const SizedBox(height: 12),
                     TextField(
                       decoration: const InputDecoration(
                         labelText: '故事背景',
@@ -349,6 +339,232 @@ class HomeScreen extends GetView<NovelController> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCharacterSection(NovelController controller, CharacterCardController characterController) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('角色设定', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        
+        // 主角选择
+        Obx(() => _buildCharacterSelector(
+          label: '主角',
+          selectedCharacter: controller.selectedMainCharacter.value,
+          onTap: () => _showCharacterSelectDialog(
+            title: '选择主角',
+            onSelect: controller.setMainCharacter,
+            currentSelected: controller.selectedMainCharacter.value,
+          ),
+        )),
+        const SizedBox(height: 16),
+        
+        // 女主角选择
+        Obx(() => _buildCharacterSelector(
+          label: '女主角',
+          selectedCharacter: controller.selectedFemaleCharacter.value,
+          onTap: () => _showCharacterSelectDialog(
+            title: '选择女主角',
+            onSelect: controller.setFemaleCharacter,
+            currentSelected: controller.selectedFemaleCharacter.value,
+          ),
+        )),
+        const SizedBox(height: 16),
+        
+        // 配角选择
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Text('配角', style: TextStyle(fontSize: 16)),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.add_circle_outline),
+                  onPressed: () => _showCharacterSelectDialog(
+                    title: '添加配角',
+                    onSelect: controller.addSupportingCharacter,
+                    currentSelected: null,
+                    allowMultiple: true,
+                  ),
+                ),
+              ],
+            ),
+            Obx(() => Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: controller.selectedSupportingCharacters
+                  .map((character) => Chip(
+                    label: Text(character.name),
+                    onDeleted: () => controller.removeSupportingCharacter(character),
+                  ))
+                  .toList(),
+            )),
+          ],
+        ),
+        const SizedBox(height: 16),
+        
+        // 反派选择
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Text('反派', style: TextStyle(fontSize: 16)),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.add_circle_outline),
+                  onPressed: () => _showCharacterSelectDialog(
+                    title: '添加反派',
+                    onSelect: controller.addVillain,
+                    currentSelected: null,
+                    allowMultiple: true,
+                  ),
+                ),
+              ],
+            ),
+            Obx(() => Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: controller.selectedVillains
+                  .map((character) => Chip(
+                    label: Text(character.name),
+                    onDeleted: () => controller.removeVillain(character),
+                  ))
+                  .toList(),
+            )),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCharacterSelector({
+    required String label,
+    required CharacterCard? selectedCharacter,
+    required VoidCallback onTap,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 16)),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    selectedCharacter?.name ?? '点击选择角色',
+                    style: TextStyle(
+                      color: selectedCharacter == null ? Colors.grey : Colors.black,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_ios, size: 16),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showCharacterSelectDialog({
+    required String title,
+    required Function(CharacterCard) onSelect,
+    CharacterCard? currentSelected,
+    bool allowMultiple = false,
+  }) async {
+    final characterController = Get.find<CharacterCardController>();
+    final characters = characterController.cards;
+    
+    if (characters.isEmpty) {
+      final result = await Get.dialog<bool>(
+        AlertDialog(
+          title: const Text('没有角色卡片'),
+          content: const Text('是否创建新的角色卡片？'),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(result: false),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () => Get.back(result: true),
+              child: const Text('创建'),
+            ),
+          ],
+        ),
+      );
+      
+      if (result == true) {
+        final newCharacter = await Get.to<CharacterCard?>(() => CharacterCardEditScreen());
+        if (newCharacter != null) {
+          onSelect(newCharacter);
+        }
+      }
+      return;
+    }
+
+    await Get.dialog(
+      AlertDialog(
+        title: Text(title),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: characters.length + 1,
+            itemBuilder: (context, index) {
+              if (index == characters.length) {
+                return ListTile(
+                  leading: const Icon(Icons.add),
+                  title: const Text('创建新角色'),
+                  onTap: () async {
+                    Get.back();
+                    final newCharacter = await Get.to<CharacterCard?>(() => CharacterCardEditScreen());
+                    if (newCharacter != null) {
+                      onSelect(newCharacter);
+                    }
+                  },
+                );
+              }
+              
+              final character = characters[index];
+              return ListTile(
+                title: Text(character.name),
+                subtitle: Text(
+                  [
+                    if (character.gender != null) character.gender,
+                    if (character.age != null) '${character.age}岁',
+                    if (character.personality != null) character.personality,
+                  ].join('，'),
+                ),
+                selected: currentSelected == character,
+                onTap: () {
+                  if (!allowMultiple) {
+                    Get.back();
+                  }
+                  onSelect(character);
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('关闭'),
+          ),
+        ],
       ),
     );
   }
