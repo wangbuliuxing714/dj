@@ -52,7 +52,7 @@ class HomeScreen extends GetView<NovelController> {
                 color: Theme.of(context).primaryColor,
               ),
               child: const Text(
-                'AI小说生成器',
+                '岱宗文脉',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 24,
@@ -69,7 +69,7 @@ class HomeScreen extends GetView<NovelController> {
             ),
             ListTile(
               leading: const Icon(Icons.edit_note),
-              title: const Text('草稿本'),
+              title: const Text('剧本草稿'),
               onTap: () {
                 Get.back();
                 Get.toNamed('/draft');
@@ -82,7 +82,7 @@ class HomeScreen extends GetView<NovelController> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    '阅读设置',
+                    '界面设置',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -219,8 +219,8 @@ class HomeScreen extends GetView<NovelController> {
           children: [
             TextField(
               decoration: const InputDecoration(
-                labelText: '小说标题',
-                hintText: '请输入小说标题',
+                labelText: '剧本标题',
+                hintText: '请输入短剧标题',
               ),
               onChanged: controller.updateTitle,
             ),
@@ -328,7 +328,7 @@ class HomeScreen extends GetView<NovelController> {
                   builder: (context) => ElevatedButton.icon(
                     onPressed: () => Get.toNamed('/storage'),
                     icon: const Icon(Icons.storage),
-                    label: const Text('已生成章节'),
+                    label: const Text('已生成剧本'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.secondary,
                       foregroundColor: Theme.of(context).colorScheme.onSecondary,

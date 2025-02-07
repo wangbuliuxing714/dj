@@ -12,7 +12,7 @@ class ModuleRepositoryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('模块仓库'),
+        title: const Text('创作工具箱'),
       ),
       body: GridView.count(
         crossAxisCount: 2,
@@ -23,29 +23,29 @@ class ModuleRepositoryScreen extends StatelessWidget {
           _buildModuleCard(
             context,
             icon: Icons.category,
-            title: '类型管理',
-            description: '管理小说类型和分类',
+            title: '剧本类型',
+            description: '管理短剧类型和分类',
             onTap: () => Get.to(GenreManagerScreen()),
           ),
           _buildModuleCard(
             context,
             icon: Icons.style,
-            title: '写作风格',
-            description: '管理写作风格和提示词',
+            title: '创作风格',
+            description: '管理创作风格和提示词',
             onTap: () => Get.to(StyleManagerScreen()),
           ),
           _buildModuleCard(
             context,
             icon: Icons.format_list_bulleted,
-            title: '大纲提示词',
-            description: '管理大纲生成模板',
+            title: '大纲模板',
+            description: '管理剧本大纲模板',
             onTap: () => Get.to(OutlinePromptScreen()),
           ),
           _buildModuleCard(
             context,
             icon: Icons.person,
             title: '角色卡片',
-            description: '管理小说角色信息',
+            description: '管理剧中人物信息',
             onTap: () => Get.to(CharacterCardListScreen()),
           ),
         ],
