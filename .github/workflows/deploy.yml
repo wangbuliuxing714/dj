@@ -42,7 +42,7 @@ jobs:
         run: |
           flutter build web \
             --release \
-            --base-href "/${{ github.event.repository.name }}/" \
+            --base-href "/dj/" \
             --web-renderer html \
             --pwa-strategy offline-first
             
