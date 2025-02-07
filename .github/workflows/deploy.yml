@@ -14,7 +14,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: subosito/flutter-action@v2
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.16.9'
           channel: 'stable'
@@ -27,7 +31,9 @@ jobs:
         
       - name: Build
         run: |
+          flutter clean
           flutter build web --release --base-href /dj/ --web-renderer html
+          touch build/web/.nojekyll
           cp build/web/index.html build/web/404.html
         
       - name: Deploy
@@ -35,4 +41,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/web
-          force_orphan: true 
+          force_orphan: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Deploy to GitHub Pages' 
