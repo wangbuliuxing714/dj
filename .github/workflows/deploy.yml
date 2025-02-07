@@ -27,12 +27,14 @@ jobs:
         run: flutter config --enable-web
         
       - name: Get dependencies
-        run: flutter pub get
+        run: |
+          flutter pub upgrade
+          flutter pub get
         
       - name: Build
         run: |
           flutter clean
-          flutter build web --release --base-href /dj/ --web-renderer html
+          flutter build web --release --base-href "/dj/" --web-renderer html
           touch build/web/.nojekyll
           cp build/web/index.html build/web/404.html
         
