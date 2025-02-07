@@ -22,8 +22,8 @@ class NovelController extends GetxController {
   final femaleCharacter = ''.obs;
   final background = ''.obs;
   final otherRequirements = ''.obs;
-  final style = '轻松幽默'.obs;
-  final totalChapters = 1.obs;
+  final style = '悬疑烧脑'.obs;
+  final totalChapters = 12.obs;  // 默认12集
   final selectedGenres = <String>[].obs;
   
   final isGenerating = false.obs;
@@ -89,12 +89,12 @@ class NovelController extends GetxController {
 
   Future<void> generateNovel({bool continueGeneration = false}) async {
     if (title.isEmpty) {
-      Get.snackbar('错误', '请输入小说标题');
+      Get.snackbar('错误', '请输入剧名');
       return;
     }
 
     if (selectedGenres.isEmpty) {
-      Get.snackbar('错误', '请选择至少一个小说类型');
+      Get.snackbar('错误', '请选择至少一个剧集类型');
       return;
     }
 
@@ -104,10 +104,27 @@ class NovelController extends GetxController {
     }
 
     // 构建完整的创作要求
-    final theme = '''主角设定：${mainCharacter.value}
-女主角设定：${femaleCharacter.value}
-故事背景：${background.value}
-其他要求：${otherRequirements.value}''';
+    final theme = '''【角色设定】
+主角设定：${mainCharacter.value}
+反派设定：${femaleCharacter.value}
+背景设置：${background.value}
+
+【剧情要求】
+${otherRequirements.value}
+
+【格式规范】
+1. 每集2-3个场景
+2. 场景格式：序号 地点 时间 内/外景
+3. 动作以"△"开头
+4. 对白格式：角色名（情绪/动作）：对话内容
+5. 特殊标记：【闪回】【镜头特写】【字幕】【付费卡点】
+
+【核心要求】
+1. 每集必须设置悬念和反转
+2. 反派台词要强势威胁
+3. 正派台词要隐忍有深意
+4. 重点使用镜头语言
+5. 每集结尾设置付费点''';
 
     isGenerating.value = true;
     generationProgress.value = 0;
@@ -115,7 +132,7 @@ class NovelController extends GetxController {
     try {
       final novel = await _novelGenerator.generateNovel(
         title: title.value,
-        genre: selectedGenres.join('、'),
+        genres: selectedGenres,
         theme: theme,
         targetReaders: '青年读者',
         totalChapters: totalChapters.value,
@@ -203,7 +220,7 @@ class NovelController extends GetxController {
         outline: novels.first.outline,
         previousChapters: _generatedChapters.toList(),
         totalChapters: totalChapters.value,
-        genre: selectedGenres.join('、'),
+        genres: selectedGenres,
         theme: '''主角设定：${mainCharacter.value}
 女主角设定：${femaleCharacter.value}
 故事背景：${background.value}
