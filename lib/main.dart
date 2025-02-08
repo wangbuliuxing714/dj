@@ -95,18 +95,23 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'AI小说生成器',
+      title: '岱宗文脉',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         useMaterial3: true,
-        platform: TargetPlatform.web,
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
-            TargetPlatform.web: NoTransitionBuilder(),
+            TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
           },
         ),
       ),
-      defaultTransition: Transition.noTransition,
+      defaultTransition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 100),
+      initialBinding: BindingsBuilder(() {
+        Get.put(ThemeController());
+        Get.put(NovelController());
+      }),
       routingCallback: (routing) {
         if (routing?.current == '/') {
           Get.toNamed('/storage', preventDuplicates: false);
