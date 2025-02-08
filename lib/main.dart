@@ -41,52 +41,48 @@ void main() async {
   // 初始化主题控制器
   Get.put(ThemeController());
   
-  // 初始化服务
+  // 初始化基础服务
   final apiConfig = Get.put(ApiConfigController());
   final aiService = Get.put(AIService(apiConfig));
   final cacheService = Get.put(CacheService(prefs));
-  
-  // 先初始化OutlinePromptController
-  final outlinePromptController = OutlinePromptController();
-  await outlinePromptController.init();
-  Get.put(outlinePromptController);
-  
-  // 初始化角色卡片控制器
-  Get.put(CharacterCardController());
-  
-  // 然后初始化其他依赖服务
-  Get.put(NovelGeneratorService(aiService, apiConfig, cacheService));
-  Get.put(ContentReviewService(aiService, apiConfig, cacheService));
-  Get.put(NovelController());
-  Get.put(DraftController());
-  Get.put(GenreController());
-  Get.put(StyleController());
-  
-  // 初始化公告服务
-  final announcementService = Get.put(AnnouncementService());
-  await announcementService.init();
-  
-  // 直接检查是否有公告需要显示
-  if (announcementService.announcement.value != null) {
-    print('有新公告需要显示');
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+
+  // 运行应用
+  runApp(const MyApp());
+
+  // 延迟初始化其他服务
+  Future.delayed(const Duration(milliseconds: 100), () async {
+    // 初始化其他控制器和服务
+    final outlinePromptController = OutlinePromptController();
+    await outlinePromptController.init();
+    Get.put(outlinePromptController);
+    
+    Get.put(CharacterCardController());
+    Get.put(NovelGeneratorService(aiService, apiConfig, cacheService));
+    Get.put(ContentReviewService(aiService, apiConfig, cacheService));
+    Get.put(NovelController());
+    Get.put(DraftController());
+    Get.put(GenreController());
+    Get.put(StyleController());
+    
+    // 初始化公告服务
+    final announcementService = Get.put(AnnouncementService());
+    await announcementService.init();
+    
+    // 检查公告
+    if (announcementService.announcement.value != null) {
       Get.dialog(
         AnnouncementScreen(announcement: announcementService.announcement.value!),
         barrierDismissible: false,
       );
-    });
-  } else {
-    print('没有新公告需要显示');
-  }
+    }
 
-  // 只在Web平台初始化许可证服务
-  if (kIsWeb) {
-    final licenseService = LicenseService();
-    await licenseService.init();
-    Get.put(licenseService);
-  }
-
-  runApp(const MyApp());
+    // Web平台特定初始化
+    if (kIsWeb) {
+      final licenseService = LicenseService();
+      await licenseService.init();
+      Get.put(licenseService);
+    }
+  });
 }
 
 class MyApp extends StatelessWidget {

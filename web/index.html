@@ -95,16 +95,36 @@
     <div class="loader"></div>
   </div>
   <script>
-    window.addEventListener('load', function(ev) {
-      // Download main.dart.js
+    window.addEventListener('load', function() {
+      var loading = document.querySelector('.loading');
+      var loadingIndicator = document.querySelector('.loader');
+      
       _flutter.loader.loadEntrypoint({
         serviceWorker: {
           serviceWorkerVersion: serviceWorkerVersion,
         },
         onEntrypointLoaded: function(engineInitializer) {
-          engineInitializer.initializeEngine().then(function(appRunner) {
+          // 显示加载进度
+          loadingIndicator.style.borderTopColor = '#4CAF50';
+          
+          engineInitializer.initializeEngine({
+            // 设置渲染器
+            renderer: 'auto',
+            // 设置缓存大小
+            canvasKitMaximumSurfaces: 8
+          }).then(function(appRunner) {
+            // 隐藏加载动画
+            loading.style.display = 'none';
+            // 运行应用
             appRunner.runApp();
+          }).catch(function(error) {
+            // 显示错误信息
+            loading.innerHTML = '加载失败，请刷新页面重试：' + error;
           });
+        },
+        onError: function(error) {
+          // 显示错误信息
+          loading.innerHTML = '加载失败，请刷新页面重试：' + error;
         }
       });
     });
