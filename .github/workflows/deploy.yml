@@ -43,7 +43,7 @@ jobs:
           flutter build web \
             --release \
             --base-href "/dj/" \
-            --web-renderer auto \
+            --web-renderer html \
             --dart-define=Dart2jsOptimization=O4
             
       - name: Optimize build

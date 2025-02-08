@@ -104,29 +104,33 @@
           serviceWorkerVersion: serviceWorkerVersion,
         },
         onEntrypointLoaded: function(engineInitializer) {
-          // 显示加载进度
           loadingIndicator.style.borderTopColor = '#4CAF50';
           
           engineInitializer.initializeEngine({
-            // 设置渲染器
-            renderer: 'auto',
-            // 设置缓存大小
-            canvasKitMaximumSurfaces: 8
+            useColorEmoji: true,
+            renderer: 'html'
           }).then(function(appRunner) {
-            // 隐藏加载动画
             loading.style.display = 'none';
-            // 运行应用
             appRunner.runApp();
           }).catch(function(error) {
-            // 显示错误信息
             loading.innerHTML = '加载失败，请刷新页面重试：' + error;
           });
         },
         onError: function(error) {
-          // 显示错误信息
           loading.innerHTML = '加载失败，请刷新页面重试：' + error;
         }
       });
+    });
+  </script>
+  <script>
+    // 禁用右键菜单
+    document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+    });
+    
+    // 添加错误处理
+    window.addEventListener('error', function(e) {
+      console.error('页面错误：', e.error);
     });
   </script>
 </body>

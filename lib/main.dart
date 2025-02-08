@@ -39,7 +39,7 @@ void main() async {
   Get.put(prefs);
   
   // 初始化主题控制器
-  Get.put(ThemeController());
+  final themeController = Get.put(ThemeController());
   
   // 初始化基础服务
   final apiConfig = Get.put(ApiConfigController());
@@ -50,7 +50,7 @@ void main() async {
   runApp(const MyApp());
 
   // 延迟初始化其他服务
-  Future.delayed(const Duration(milliseconds: 100), () async {
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
     // 初始化其他控制器和服务
     final outlinePromptController = OutlinePromptController();
     await outlinePromptController.init();
@@ -101,6 +101,12 @@ class MyApp extends StatelessWidget {
             TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
           },
         ),
+        // 添加明确的背景色
+        scaffoldBackgroundColor: Colors.white,
+        colorScheme: ColorScheme.light(
+          background: Colors.white,
+          surface: Colors.white,
+        ),
       ),
       defaultTransition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 100),
@@ -108,21 +114,14 @@ class MyApp extends StatelessWidget {
         Get.put(ThemeController());
         Get.put(NovelController());
       }),
-      routingCallback: (routing) {
-        if (routing?.current == '/') {
-          Get.toNamed('/storage', preventDuplicates: false);
-          Get.back();
-        }
-      },
-      home: kIsWeb  // 只在Web平台检查许可证
+      home: kIsWeb
           ? Obx(() {
               final licenseService = Get.find<LicenseService>();
               return licenseService.isLicensed.value
-                  ? const HomeScreen()  // 已激活许可证，显示主页
-                  : LicenseScreen();    // 未激活许可证，显示激活页面
+                  ? const HomeScreen()
+                  : LicenseScreen();
             })
-          : const HomeScreen(),  // 非Web平台直接显示主页
-      initialRoute: '/',
+          : const HomeScreen(),
       getPages: [
         GetPage(name: '/', page: () => const HomeScreen()),
         GetPage(name: '/storage', page: () => StorageScreen()),
