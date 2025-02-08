@@ -99,7 +99,20 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
         useMaterial3: true,
+        platform: TargetPlatform.web,
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.web: NoTransitionBuilder(),
+          },
+        ),
       ),
+      defaultTransition: Transition.noTransition,
+      routingCallback: (routing) {
+        if (routing?.current == '/') {
+          Get.toNamed('/storage', preventDuplicates: false);
+          Get.back();
+        }
+      },
       home: kIsWeb  // 只在Web平台检查许可证
           ? Obx(() {
               final licenseService = Get.find<LicenseService>();
