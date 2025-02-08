@@ -44,17 +44,7 @@ jobs:
             --release \
             --base-href "/dj/" \
             --web-renderer html \
-            --dart-define=Dart2jsOptimization=O4
-            
-      - name: Optimize build
-        run: |
-          cd build/web
-          # Optimize and compress JS files
-          find . -type f -name "*.js" -exec gzip -k -9 {} \;
-          # Optimize and compress CSS files
-          find . -type f -name "*.css" -exec gzip -k -9 {} \;
-          # Optimize and compress HTML files
-          find . -type f -name "*.html" -exec gzip -k -9 {} \;
+            --pwa-strategy offline-first
             
       - name: Configure Pages
         run: |

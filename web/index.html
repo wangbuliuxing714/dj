@@ -25,19 +25,6 @@
   <meta http-equiv="Access-Control-Allow-Methods" content="GET,POST,PUT,DELETE,OPTIONS">
   <meta http-equiv="Access-Control-Allow-Headers" content="Origin, X-Requested-With, Content-Type, Accept">
 
-  <!-- Performance optimizations -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
-  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
-  
-  <!-- Cache control -->
-  <meta http-equiv="Cache-Control" content="max-age=86400">
-  
-  <!-- Preload critical assets -->
-  <link rel="preload" href="main.dart.js" as="script">
-  <link rel="preload" href="flutter.js" as="script">
-
   <!-- iOS meta tags & icons -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -95,42 +82,18 @@
     <div class="loader"></div>
   </div>
   <script>
-    window.addEventListener('load', function() {
-      var loading = document.querySelector('.loading');
-      var loadingIndicator = document.querySelector('.loader');
-      
+    window.addEventListener('load', function(ev) {
+      // Download main.dart.js
       _flutter.loader.loadEntrypoint({
         serviceWorker: {
           serviceWorkerVersion: serviceWorkerVersion,
         },
         onEntrypointLoaded: function(engineInitializer) {
-          loadingIndicator.style.borderTopColor = '#4CAF50';
-          
-          engineInitializer.initializeEngine({
-            useColorEmoji: true,
-            renderer: 'html'
-          }).then(function(appRunner) {
-            loading.style.display = 'none';
+          engineInitializer.initializeEngine().then(function(appRunner) {
             appRunner.runApp();
-          }).catch(function(error) {
-            loading.innerHTML = '加载失败，请刷新页面重试：' + error;
           });
-        },
-        onError: function(error) {
-          loading.innerHTML = '加载失败，请刷新页面重试：' + error;
         }
       });
-    });
-  </script>
-  <script>
-    // 禁用右键菜单
-    document.addEventListener('contextmenu', function(e) {
-      e.preventDefault();
-    });
-    
-    // 添加错误处理
-    window.addEventListener('error', function(e) {
-      console.error('页面错误：', e.error);
     });
   </script>
 </body>

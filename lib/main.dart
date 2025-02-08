@@ -39,50 +39,54 @@ void main() async {
   Get.put(prefs);
   
   // 初始化主题控制器
-  final themeController = Get.put(ThemeController());
+  Get.put(ThemeController());
   
-  // 初始化基础服务
+  // 初始化服务
   final apiConfig = Get.put(ApiConfigController());
   final aiService = Get.put(AIService(apiConfig));
   final cacheService = Get.put(CacheService(prefs));
-
-  // 运行应用
-  runApp(const MyApp());
-
-  // 延迟初始化其他服务
-  WidgetsBinding.instance.addPostFrameCallback((_) async {
-    // 初始化其他控制器和服务
-    final outlinePromptController = OutlinePromptController();
-    await outlinePromptController.init();
-    Get.put(outlinePromptController);
-    
-    Get.put(CharacterCardController());
-    Get.put(NovelGeneratorService(aiService, apiConfig, cacheService));
-    Get.put(ContentReviewService(aiService, apiConfig, cacheService));
-    Get.put(NovelController());
-    Get.put(DraftController());
-    Get.put(GenreController());
-    Get.put(StyleController());
-    
-    // 初始化公告服务
-    final announcementService = Get.put(AnnouncementService());
-    await announcementService.init();
-    
-    // 检查公告
-    if (announcementService.announcement.value != null) {
+  
+  // 先初始化OutlinePromptController
+  final outlinePromptController = OutlinePromptController();
+  await outlinePromptController.init();
+  Get.put(outlinePromptController);
+  
+  // 初始化角色卡片控制器
+  Get.put(CharacterCardController());
+  
+  // 然后初始化其他依赖服务
+  Get.put(NovelGeneratorService(aiService, apiConfig, cacheService));
+  Get.put(ContentReviewService(aiService, apiConfig, cacheService));
+  Get.put(NovelController());
+  Get.put(DraftController());
+  Get.put(GenreController());
+  Get.put(StyleController());
+  
+  // 初始化公告服务
+  final announcementService = Get.put(AnnouncementService());
+  await announcementService.init();
+  
+  // 直接检查是否有公告需要显示
+  if (announcementService.announcement.value != null) {
+    print('有新公告需要显示');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       Get.dialog(
         AnnouncementScreen(announcement: announcementService.announcement.value!),
         barrierDismissible: false,
       );
-    }
+    });
+  } else {
+    print('没有新公告需要显示');
+  }
 
-    // Web平台特定初始化
-    if (kIsWeb) {
-      final licenseService = LicenseService();
-      await licenseService.init();
-      Get.put(licenseService);
-    }
-  });
+  // 只在Web平台初始化许可证服务
+  if (kIsWeb) {
+    final licenseService = LicenseService();
+    await licenseService.init();
+    Get.put(licenseService);
+  }
+
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -91,37 +95,20 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: '岱宗文脉',
+      title: 'AI小说生成器',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         useMaterial3: true,
-        pageTransitionsTheme: const PageTransitionsTheme(
-          builders: {
-            TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
-            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-          },
-        ),
-        // 添加明确的背景色
-        scaffoldBackgroundColor: Colors.white,
-        colorScheme: ColorScheme.light(
-          background: Colors.white,
-          surface: Colors.white,
-        ),
       ),
-      defaultTransition: Transition.fadeIn,
-      transitionDuration: const Duration(milliseconds: 100),
-      initialBinding: BindingsBuilder(() {
-        Get.put(ThemeController());
-        Get.put(NovelController());
-      }),
-      home: kIsWeb
+      home: kIsWeb  // 只在Web平台检查许可证
           ? Obx(() {
               final licenseService = Get.find<LicenseService>();
               return licenseService.isLicensed.value
-                  ? const HomeScreen()
-                  : LicenseScreen();
+                  ? const HomeScreen()  // 已激活许可证，显示主页
+                  : LicenseScreen();    // 未激活许可证，显示激活页面
             })
-          : const HomeScreen(),
+          : const HomeScreen(),  // 非Web平台直接显示主页
+      initialRoute: '/',
       getPages: [
         GetPage(name: '/', page: () => const HomeScreen()),
         GetPage(name: '/storage', page: () => StorageScreen()),
