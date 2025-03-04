@@ -39,19 +39,47 @@ class _OutlinePreviewScreenState extends State<OutlinePreviewScreen> {
   void _listenToGenerationStream() {
     if (widget.generationStream != null) {
       setState(() => _isGenerating = true);
+      
+      // 使用缓冲区减少状态更新频率，特别是在Web平台上
+      String buffer = '';
+      bool updateScheduled = false;
+      
       widget.generationStream!.listen(
         (content) {
-          setState(() {
-            _generatingContent = content;
-            _controller.text = content;
-          });
+          // 更新缓冲区
+          buffer = content;
+          
+          // 如果没有计划更新，则安排一个
+          if (!updateScheduled) {
+            updateScheduled = true;
+            
+            // 使用Future.delayed来批量处理更新，减少重绘次数
+            Future.delayed(const Duration(milliseconds: 100), () {
+              if (mounted) {
+                setState(() {
+                  _generatingContent = buffer;
+                  _controller.text = buffer;
+                });
+              }
+              updateScheduled = false;
+            });
+          }
         },
         onDone: () {
-          setState(() => _isGenerating = false);
+          if (mounted) {
+            setState(() {
+              _isGenerating = false;
+              // 确保最终内容已更新
+              _generatingContent = buffer;
+              _controller.text = buffer;
+            });
+          }
         },
         onError: (error) {
-          setState(() => _isGenerating = false);
-          Get.snackbar('错误', '生成过程出现错误: $error');
+          if (mounted) {
+            setState(() => _isGenerating = false);
+            Get.snackbar('错误', '生成过程出现错误: $error');
+          }
         },
       );
     }
