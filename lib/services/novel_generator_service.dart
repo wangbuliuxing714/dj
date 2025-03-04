@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:get/get.dart';
 import 'package:novel_app/services/ai_service.dart';
 import 'package:novel_app/prompts/system_prompts.dart';
@@ -66,9 +67,23 @@ class NovelGeneratorService extends GetxService {
       print('开始生成大纲 - 标题: $title, 类型: $genre, 总集数: $totalChapters');
       _updateProgress("正在生成大纲...");
       
+      // 创建一个流控制器来传递实时生成的内容
+      final streamController = StreamController<String>();
+      
       // 每次生成的章节数
       const int batchSize = 20;
       final StringBuffer fullOutline = StringBuffer();
+      
+      // 显示全屏预览对话框，传入流以实时显示生成内容
+      print('显示大纲预览对话框');
+      final previewFuture = Get.to(() => OutlinePreviewScreen(
+        outline: '',
+        onOutlineConfirmed: (String modifiedOutline) {
+          print('用户确认了修改后的大纲，长度: ${modifiedOutline.length}');
+          Get.back(result: modifiedOutline);
+        },
+        generationStream: streamController.stream,
+      ));
       
       // 分批生成大纲
       for (int start = 1; start <= totalChapters; start += batchSize) {
@@ -88,6 +103,10 @@ class NovelGeneratorService extends GetxService {
           start,
           end,
           existingOutline,
+          (content) {
+            // 将实时生成的内容发送到流
+            streamController.add(fullOutline.toString() + content);
+          },
         );
         
         print('本批次生成的大纲长度: ${batchOutline.length}');
@@ -97,6 +116,9 @@ class NovelGeneratorService extends GetxService {
         
         fullOutline.write(batchOutline);
         print('当前完整大纲长度: ${fullOutline.length}');
+        
+        // 更新流中的内容
+        streamController.add(fullOutline.toString());
         
         // 如果不是最后一批，等待一下再继续
         if (end < totalChapters) {
@@ -110,18 +132,15 @@ class NovelGeneratorService extends GetxService {
       
       if (completeOutline.trim().isEmpty) {
         print('错误：生成的大纲为空，检查生成过程');
+        streamController.close();
         throw Exception('生成的大纲内容为空，请重试');
       }
       
-      // 显示全屏预览对话框
-      print('显示大纲预览对话框');
-      final confirmedOutline = await Get.to(() => OutlinePreviewScreen(
-        outline: completeOutline,
-        onOutlineConfirmed: (String modifiedOutline) {
-          print('用户确认了修改后的大纲，长度: ${modifiedOutline.length}');
-          Get.back(result: modifiedOutline);
-        },
-      ));
+      // 关闭流控制器
+      streamController.close();
+      
+      // 等待用户确认
+      final confirmedOutline = await previewFuture;
       
       final finalOutline = confirmedOutline ?? completeOutline;
       print('最终大纲长度: ${finalOutline.length}');
@@ -143,6 +162,7 @@ class NovelGeneratorService extends GetxService {
     int startChapter,
     int endChapter,
     String existingOutline,
+    [void Function(String)? onChunkGenerated]
   ) async {
     // 验证类型数量
     if (genres.isEmpty || genres.length > 5) {
@@ -244,6 +264,7 @@ ${existingOutline.isEmpty ? '这是第一部分大纲，请从第一集开始创
           buffer.write(chunk);
           print('收到AI返回内容，当前长度：${buffer.length}');
           onProgress?.call('正在生成大纲...\n\n${buffer.toString()}');
+          onChunkGenerated?.call(buffer.toString());
         }
       }
       
@@ -1115,4 +1136,4 @@ ${_designChapterFocus(number: number, totalChapters: totalChapters, outline: out
       return '生成失败: $e';
     }
   }
-} 
+}

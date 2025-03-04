@@ -4,11 +4,13 @@ import 'package:get/get.dart';
 class OutlinePreviewScreen extends StatefulWidget {
   final String outline;
   final Function(String) onOutlineConfirmed;
+  final Stream<String>? generationStream;
 
   const OutlinePreviewScreen({
     Key? key,
     required this.outline,
     required this.onOutlineConfirmed,
+    this.generationStream,
   }) : super(key: key);
 
   @override
@@ -18,11 +20,14 @@ class OutlinePreviewScreen extends StatefulWidget {
 class _OutlinePreviewScreenState extends State<OutlinePreviewScreen> {
   late TextEditingController _controller;
   bool _isEditing = false;
+  bool _isGenerating = false;
+  String _generatingContent = '';
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.outline);
+    _listenToGenerationStream();
   }
 
   @override
@@ -31,11 +36,32 @@ class _OutlinePreviewScreenState extends State<OutlinePreviewScreen> {
     super.dispose();
   }
 
+  void _listenToGenerationStream() {
+    if (widget.generationStream != null) {
+      setState(() => _isGenerating = true);
+      widget.generationStream!.listen(
+        (content) {
+          setState(() {
+            _generatingContent = content;
+            _controller.text = content;
+          });
+        },
+        onDone: () {
+          setState(() => _isGenerating = false);
+        },
+        onError: (error) {
+          setState(() => _isGenerating = false);
+          Get.snackbar('错误', '生成过程出现错误: $error');
+        },
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('大纲预览'),
+        title: Text(_isGenerating ? '正在生成大纲...' : '大纲预览'),
         actions: [
           IconButton(
             icon: Icon(_isEditing ? Icons.check : Icons.edit),
@@ -56,6 +82,15 @@ class _OutlinePreviewScreenState extends State<OutlinePreviewScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            if (_isGenerating) ...[              
+              LinearProgressIndicator(),
+              SizedBox(height: 16),
+              Text(
+                '正在生成大纲，请稍候...',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              SizedBox(height: 16),
+            ],
             Expanded(
               child: _isEditing
                   ? TextField(
@@ -63,6 +98,7 @@ class _OutlinePreviewScreenState extends State<OutlinePreviewScreen> {
                       maxLines: null,
                       expands: true,
                       textAlignVertical: TextAlignVertical.top,
+                      enabled: !_isGenerating,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                         hintText: '在此编辑大纲内容...',
@@ -101,4 +137,4 @@ class _OutlinePreviewScreenState extends State<OutlinePreviewScreen> {
       ),
     );
   }
-} 
+}
